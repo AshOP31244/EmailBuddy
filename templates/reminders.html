@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Reminders — Email Buddy{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Reminders</h1><p>Track follow-ups so nothing slips through</p></div>
+
+{% if overdue %}
+<div class="card" style="border-left:4px solid var(--destructive)">
+  <h2 class="card-title" style="color:var(--destructive)">⚠️ Overdue ({{ overdue.count }})</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Was due</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for c in overdue %}
+      <tr>
+        <td><strong>{{ c.name }}</strong></td>
+        <td>{{ c.email }}</td>
+        <td>{% if c.status == 'Interested' %}<span class="badge badge-interested">{{ c.status }}</span>
+            {% elif c.status == 'Not Interested' %}<span class="badge badge-not-interested">{{ c.status }}</span>
+            {% elif c.status == 'Busy' %}<span class="badge badge-busy">{{ c.status }}</span>
+            {% else %}<span class="badge badge-follow-up">{{ c.status }}</span>{% endif %}</td>
+        <td style="color:var(--destructive);font-weight:600;font-size:.85rem">{{ c.next_reminder|date:"d M Y, H:i" }}</td>
+        <td class="action-links">
+          <a href="{% url 'customer_detail' c.id %}">👁 View</a>
+          <a href="{% url 'customer_edit' c.id %}">✏️ Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if upcoming %}
+<div class="card" style="border-left:4px solid var(--primary)">
+  <h2 class="card-title" style="color:var(--primary)">📅 Upcoming ({{ upcoming.count }})</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Due</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for c in upcoming %}
+      <tr>
+        <td><strong>{{ c.name }}</strong></td>
+        <td>{{ c.email }}</td>
+        <td>{% if c.status == 'Interested' %}<span class="badge badge-interested">{{ c.status }}</span>
+            {% elif c.status == 'Not Interested' %}<span class="badge badge-not-interested">{{ c.status }}</span>
+            {% elif c.status == 'Busy' %}<span class="badge badge-busy">{{ c.status }}</span>
+            {% else %}<span class="badge badge-follow-up">{{ c.status }}</span>{% endif %}</td>
+        <td style="color:var(--primary);font-weight:600;font-size:.85rem">{{ c.next_reminder|date:"d M Y, H:i" }}</td>
+        <td class="action-links">
+          <a href="{% url 'customer_detail' c.id %}">👁 View</a>
+          <a href="{% url 'customer_edit' c.id %}">✏️ Edit</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if not overdue and not upcoming %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">⏰</div>
+    <h3>No reminders set</h3>
+    <p>Add reminders to your customers to stay on top of follow-ups</p>
+    <a href="{% url 'customer_list' %}" class="btn btn-primary" style="margin-top:1rem">View Customers</a>
+  </div>
+</div>
+{% endif %}
+
+<a href="{% url 'dashboard' %}" class="btn btn-secondary">← Dashboard</a>
+{% endblock %}

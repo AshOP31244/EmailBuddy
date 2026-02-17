@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — Email Buddy{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Dashboard</h1>
+  <p>Welcome back — here's your overview</p>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card"><div class="stat-label">Templates</div><div class="stat-value">{{ template_count }}</div></div>
+  <div class="stat-card"><div class="stat-label">Customers</div><div class="stat-value">{{ customer_count }}</div></div>
+  <div class="stat-card"><div class="stat-label">Emails Sent</div><div class="stat-value">{{ email_sent_count }}</div></div>
+  <div class="stat-card"><div class="stat-label">Upcoming Reminders</div><div class="stat-value" style="color:var(--primary)">{{ upcoming_count }}</div></div>
+  <div class="stat-card"><div class="stat-label">Overdue Reminders</div><div class="stat-value" style="color:var(--destructive)">{{ overdue_count }}</div></div>
+</div>
+
+<div class="card">
+  <h2 class="card-title">⚡ Quick Actions</h2>
+  <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+    <a href="{% url 'email_send' %}" class="btn btn-primary">📧 Send Email</a>
+    <a href="{% url 'customer_create' %}" class="btn btn-primary">👤 Add Customer</a>
+    <a href="{% url 'template_create' %}" class="btn btn-secondary">📝 New Template</a>
+    <a href="{% url 'reminders' %}" class="btn btn-secondary">⏰ Reminders</a>
+  </div>
+</div>
+
+{% if overdue_count > 0 %}
+<div class="card" style="border-left:4px solid var(--destructive)">
+  <h3 style="color:var(--destructive);margin-bottom:.5rem">⚠️ {{ overdue_count }} Overdue Reminder{{ overdue_count|pluralize }}</h3>
+  <p>Some customers need follow-up. <a href="{% url 'reminders' %}" style="color:var(--primary);font-weight:600">View Reminders →</a></p>
+</div>
+{% endif %}
+
+{% if recent_emails %}
+<div class="card">
+  <h2 class="card-title">📬 Recent Email Activity</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>To</th><th>Subject</th><th>Template</th><th>Sent</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for log in recent_emails %}
+        <tr>
+          <td>{{ log.to_email }}</td>
+          <td style="font-size:.85rem">{{ log.subject|default:"—" }}</td>
+          <td style="font-size:.85rem">{{ log.template.title|default:"Manual" }}</td>
+          <td style="font-size:.82rem;white-space:nowrap">{{ log.sent_at|date:"d M Y, H:i" }}</td>
+          <td><span class="badge badge-sent">{{ log.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <a href="{% url 'email_log_list' %}" class="btn btn-secondary btn-sm" style="margin-top:1rem">View All Logs →</a>
+</div>
+{% endif %}
+{% endblock %}

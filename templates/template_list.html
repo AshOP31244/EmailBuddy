@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Templates — Email Buddy{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Templates</h1>
+  <p>Create reusable email bodies with placeholders</p>
+</div>
+<div style="margin-bottom:1.25rem">
+  <a href="{% url 'template_create' %}" class="btn btn-primary">➕ New Template</a>
+</div>
+<div class="card">
+  {% if templates %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Title</th><th>Preview</th><th>Created</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for t in templates %}
+        <tr>
+          <td><strong>{{ t.title }}</strong></td>
+          <td style="color:var(--muted-fg);font-size:.85rem">{{ t.body|truncatewords:12 }}</td>
+          <td style="font-size:.82rem;white-space:nowrap">{{ t.created_at|date:"d M Y" }}</td>
+          <td class="action-links">
+            <a href="{% url 'template_edit' t.id %}">✏️ Edit</a>
+            <a href="{% url 'template_delete' t.id %}" class="danger">🗑 Delete</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📝</div>
+    <h3>No templates yet</h3>
+    <p>Create your first template to speed up sending</p>
+    <a href="{% url 'template_create' %}" class="btn btn-primary" style="margin-top:1rem">Create Template</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

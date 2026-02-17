@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Email Buddy">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+  <title>{% block title %}Email Buddy{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --card:#f5f5f4; --ring:#6366f1; --input:#d6d3d1; --muted:#e7e5e4;
+      --accent:#f3e5f5; --border:#d6d3d1; --radius:1.25rem;
+      --primary:#6366f1; --sidebar-bg:#d6d3d1; --background:#e7e5e4;
+      --foreground:#1e293b; --destructive:#ef4444;
+      --primary-fg:#ffffff; --muted-fg:#6b7280;
+      --secondary:#d6d3d1; --secondary-fg:#4b5563;
+      --sidebar-fg:#1e293b; --sidebar-accent:#f3e5f5;
+      --font-sans:'Plus Jakarta Sans',sans-serif;
+      --font-mono:'Roboto Mono',monospace;
+      --font-serif:'Lora',serif;
+      --shadow:2px 2px 10px 4px rgba(0,0,0,.11);
+      --sw:268px; --tbh:60px;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-sans);background:var(--background);color:var(--foreground);line-height:1.6}
+
+    /* ── Topbar (mobile) */
+    .topbar{
+      display:none;position:fixed;inset:0 0 auto;height:var(--tbh);
+      background:var(--sidebar-bg);box-shadow:var(--shadow);
+      z-index:300;align-items:center;padding:0 1rem;gap:.75rem;
+    }
+    .topbar-logo{font-family:var(--font-serif);font-size:1.2rem;font-weight:700;color:var(--primary);flex:1}
+    .hamburger{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:.4rem}
+    .hamburger span{display:block;width:22px;height:2.5px;background:var(--foreground);border-radius:2px;transition:transform .25s,opacity .25s}
+    .hamburger.open span:nth-child(1){transform:translateY(7.5px) rotate(45deg)}
+    .hamburger.open span:nth-child(2){opacity:0}
+    .hamburger.open span:nth-child(3){transform:translateY(-7.5px) rotate(-45deg)}
+
+    /* ── Shell */
+    .app-shell{display:flex;min-height:100vh}
+
+    /* ── Sidebar */
+    .sidebar{
+      width:var(--sw);background:var(--sidebar-bg);
+      display:flex;flex-direction:column;
+      padding:1.5rem 1.25rem 1.5rem;
+      box-shadow:var(--shadow);
+      position:fixed;top:0;left:0;height:100vh;
+      z-index:200;overflow-y:auto;
+      transition:transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .sidebar-logo{
+      font-family:var(--font-serif);font-size:1.35rem;font-weight:700;
+      color:var(--primary);display:flex;align-items:center;gap:.5rem;
+      padding:.25rem 0 1.25rem;border-bottom:1px solid var(--border);
+      margin-bottom:1rem;text-decoration:none;
+    }
+    .sidebar-nav{list-style:none;flex:1}
+    .sidebar-nav li{margin-bottom:.3rem}
+    .sidebar-nav a{
+      display:flex;align-items:center;gap:.75rem;
+      padding:.68rem 1rem;border-radius:.75rem;
+      color:var(--sidebar-fg);text-decoration:none;
+      font-weight:500;font-size:.93rem;
+      transition:background .15s,color .15s;
+    }
+    .nav-icon{font-size:1.1rem;width:1.4rem;text-align:center;flex-shrink:0}
+    .sidebar-nav a:hover{background:var(--sidebar-accent)}
+    .sidebar-nav a.active{background:var(--primary);color:#fff}
+    .sidebar-footer{padding-top:.85rem;border-top:1px solid var(--border);margin-top:.5rem}
+
+    /* Overlay */
+    .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:190}
+    .overlay.show{display:block}
+
+    /* ── Main */
+    .main-content{margin-left:var(--sw);flex:1;padding:2rem;min-height:100vh}
+
+    /* ── Page header */
+    .page-header{margin-bottom:1.75rem}
+    .page-header h1{font-size:1.85rem;font-weight:700;margin-bottom:.3rem}
+    .page-header p{color:var(--muted-fg)}
+
+    /* ── Cards */
+    .card{background:var(--card);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;box-shadow:var(--shadow)}
+    .card-title{font-size:1.1rem;font-weight:600;margin-bottom:1rem}
+
+    /* ── Stats */
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:1.25rem;margin-bottom:1.75rem}
+    .stat-card{background:var(--card);border-radius:var(--radius);padding:1.25rem 1.5rem;box-shadow:var(--shadow)}
+    .stat-label{color:var(--muted-fg);font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem}
+    .stat-value{font-size:2rem;font-weight:700;color:var(--primary);line-height:1.1}
+
+    /* ── Buttons */
+    .btn{
+      display:inline-flex;align-items:center;gap:.4rem;
+      padding:.65rem 1.3rem;border-radius:.75rem;
+      font-weight:600;font-size:.9rem;text-decoration:none;
+      border:none;cursor:pointer;font-family:var(--font-sans);
+      transition:opacity .18s,transform .18s;
+    }
+    .btn:hover{opacity:.87;transform:translateY(-2px)}
+    .btn:active{transform:none}
+    .btn-primary{background:var(--primary);color:#fff}
+    .btn-secondary{background:var(--secondary);color:var(--secondary-fg)}
+    .btn-destructive{background:var(--destructive);color:#fff}
+    .btn-sm{padding:.45rem .9rem;font-size:.82rem}
+
+    /* ── Forms */
+    .form-group{margin-bottom:1.35rem}
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    .form-label{display:block;margin-bottom:.45rem;font-weight:600;font-size:.88rem}
+    .form-input{
+      width:100%;padding:.7rem 1rem;
+      border:2px solid var(--input);border-radius:.75rem;
+      background:var(--card);color:var(--foreground);
+      font-family:var(--font-sans);font-size:.95rem;
+      transition:border-color .18s,box-shadow .18s;
+    }
+    .form-input:focus{outline:none;border-color:var(--ring);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+    textarea.form-input{resize:vertical;min-height:120px}
+    .save-toggle{width:18px;height:18px;cursor:pointer;accent-color:var(--primary);vertical-align:middle}
+    .toggle-section{background:var(--muted);border-radius:.85rem;padding:1.25rem;margin-top:.85rem;border:1px dashed var(--border)}
+    .toggle-section .form-row{gap:.85rem}
+
+    /* ── Tables */
+    .table-wrap{overflow-x:auto;border-radius:.75rem}
+    table{width:100%;border-collapse:collapse;min-width:480px}
+    thead{background:var(--muted)}
+    th{padding:.8rem 1rem;text-align:left;font-weight:600;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted-fg)}
+    td{padding:.85rem 1rem;border-bottom:1px solid var(--border);font-size:.9rem}
+    tr:last-child td{border-bottom:none}
+    tbody tr:hover{background:rgba(99,102,241,.04)}
+
+    /* ── Badges */
+    .badge{display:inline-block;padding:.22rem .65rem;border-radius:999px;font-size:.76rem;font-weight:600;white-space:nowrap}
+    .badge-interested{background:#dcfce7;color:#166534}
+    .badge-not-interested{background:#fee2e2;color:#991b1b}
+    .badge-busy{background:#fef3c7;color:#92400e}
+    .badge-follow-up,.badge-sent{background:#dbeafe;color:#1e40af}
+
+    /* ── Action links */
+    .action-links{display:flex;gap:.4rem;flex-wrap:wrap}
+    .action-links a{display:inline-flex;align-items:center;gap:.2rem;color:var(--primary);text-decoration:none;font-weight:500;font-size:.83rem;padding:.28rem .55rem;border-radius:.5rem;transition:background .15s}
+    .action-links a:hover{background:rgba(99,102,241,.1)}
+    .action-links a.danger{color:var(--destructive)}
+    .action-links a.danger:hover{background:#fee2e2}
+
+    /* ── Messages */
+    .messages{margin-bottom:1.5rem}
+    .message{padding:.85rem 1.2rem;border-radius:.75rem;margin-bottom:.5rem;font-weight:500;font-size:.9rem}
+    .message-success{background:#dcfce7;color:#166534;border:1px solid #86efac}
+    .message-error,.message-warning{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+    .message-info{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+
+    /* ── Empty state */
+    .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted-fg)}
+    .empty-state .empty-icon{font-size:3rem;margin-bottom:.75rem}
+    .empty-state h3{font-size:1.05rem;font-weight:600;margin-bottom:.4rem;color:var(--foreground)}
+
+    /* ── Tip box */
+    .tip-box{background:var(--accent);border-radius:var(--radius);padding:1.1rem 1.4rem;border-left:4px solid var(--primary);font-size:.88rem;color:#374151}
+
+    /* ─── MOBILE ─────────────────────────────────────── */
+    @media(max-width:768px){
+      .topbar{display:flex}
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.open{transform:translateX(0)}
+      .main-content{margin-left:0;padding:calc(var(--tbh) + 1rem) 1rem 2rem}
+      .form-row{grid-template-columns:1fr}
+      .stats-grid{grid-template-columns:repeat(2,1fr)}
+      .page-header h1{font-size:1.45rem}
+    }
+    @media(max-width:420px){
+      .stats-grid{grid-template-columns:1fr}
+    }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<header class="topbar">
+  <button class="hamburger" id="ham" aria-label="Toggle menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="topbar-logo">📧 Email Buddy</span>
+</header>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <a href="{% url 'dashboard' %}" class="sidebar-logo">📧 Email Buddy</a>
+    <nav>
+      <ul class="sidebar-nav">
+        <li><a href="{% url 'dashboard' %}" {% if request.path == '/' %}class="active"{% endif %}><span class="nav-icon">📊</span>Dashboard</a></li>
+        <li><a href="{% url 'template_list' %}" {% if '/templates/' in request.path %}class="active"{% endif %}><span class="nav-icon">📝</span>Templates</a></li>
+        <li><a href="{% url 'customer_list' %}" {% if '/customers/' in request.path %}class="active"{% endif %}><span class="nav-icon">👥</span>Customers</a></li>
+        <li><a href="{% url 'email_send' %}" {% if request.path == '/email/send/' %}class="active"{% endif %}><span class="nav-icon">📨</span>Send Email</a></li>
+        <li><a href="{% url 'email_log_list' %}" {% if request.path == '/email/logs/' %}class="active"{% endif %}><span class="nav-icon">📋</span>Email Logs</a></li>
+        <li><a href="{% url 'reminders' %}" {% if request.path == '/reminders/' %}class="active"{% endif %}><span class="nav-icon">⏰</span>Reminders</a></li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">
+      <ul class="sidebar-nav">
+        <li><a href="{% url 'logout' %}"><span class="nav-icon">🚪</span>Logout</a></li>
+      </ul>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    {% if messages %}
+      <div class="messages">
+        {% for msg in messages %}<div class="message message-{{ msg.tags }}">{{ msg }}</div>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script>
+  const ham=document.getElementById('ham'),
+        sb=document.getElementById('sidebar'),
+        ov=document.getElementById('overlay');
+  function open(){sb.classList.add('open');ov.classList.add('show');ham.classList.add('open');document.body.style.overflow='hidden'}
+  function close(){sb.classList.remove('open');ov.classList.remove('show');ham.classList.remove('open');document.body.style.overflow=''}
+  ham.addEventListener('click',()=>sb.classList.contains('open')?close():open());
+  ov.addEventListener('click',close);
+  document.querySelectorAll('.sidebar-nav a').forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=768)close()}));
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

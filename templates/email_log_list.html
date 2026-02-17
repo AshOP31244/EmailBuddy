@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Email Logs — Email Buddy{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Email Logs</h1>
+  <p>Every outgoing email you've logged</p>
+</div>
+
+<div class="card">
+  {% if email_logs %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>To</th>
+          <th>Subject</th>
+          <th>CC</th>
+          <th>Template</th>
+          <th>Sent</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in email_logs %}
+        <tr>
+          <td>
+            <strong>{{ log.to_email }}</strong>
+            {% if log.customer %}
+              <br><a href="{% url 'customer_detail' log.customer.id %}" style="font-size:.78rem;color:var(--primary)">👤 {{ log.customer.name }}</a>
+            {% endif %}
+          </td>
+          <td>{{ log.subject|default:"—" }}</td>
+          <td style="font-size:.82rem;color:var(--muted-fg)">{{ log.cc_emails|default:"—" }}</td>
+          <td>{{ log.template.title|default:"Manual" }}</td>
+          <td style="white-space:nowrap;font-size:.82rem">{{ log.sent_at|date:"d M Y, H:i" }}</td>
+          <td><span class="badge badge-sent">{{ log.status }}</span></td>
+          <td class="action-links">
+            {% if log.customer %}
+              <a href="{% url 'customer_detail' log.customer.id %}">👤 Customer</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>No emails logged yet</h3>
+    <p>Start sending to see logs here</p>
+    <a href="{% url 'email_send' %}" class="btn btn-primary" style="margin-top:1rem">Send Email</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

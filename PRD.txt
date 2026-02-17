@@ -1,0 +1,293 @@
+Product Name: MailFlow – Smart Email Workflow Manager
+1️⃣ Product Vision
+
+MailFlow is a productivity tool designed to help professionals manage repetitive emails, insert templates directly into Gmail via a Chrome Extension, and track follow-ups through a centralized web dashboard.
+
+The system will consist of:
+
+🌐 Web Application (Django-based dashboard)
+
+🧩 Chrome Extension (Gmail template insertion)
+
+🗄 SQLite database (Phase 1)
+
+This version is designed as an MVP (Minimum Viable Product) with future scalability.
+
+2️⃣ Problem Statement
+
+Users who frequently send repetitive emails:
+
+Waste time copy-pasting
+
+Forget follow-ups
+
+Lack organized template storage
+
+Cannot track communication history
+
+This results in reduced efficiency and missed opportunities.
+
+3️⃣ Product Goals
+Primary Goals
+
+Reduce repetitive email effort
+
+Centralize template storage
+
+Enable one-click template insertion
+
+Provide reminder tracking
+
+Offer basic CRM-style tracking
+
+Long-Term Goal
+
+Evolve into a SaaS email workflow automation platform.
+
+4️⃣ Target Users
+
+Sales executives
+
+Operations executives
+
+Freelancers
+
+Small business owners
+
+Customer support agents
+
+5️⃣ Product Scope (Phase 1 – MVP)
+🌐 Web Application (Django + SQLite)
+5.1 Authentication
+
+User Registration
+
+User Login
+
+Logout
+
+Password hashing
+
+5.2 Template Management
+
+User can:
+
+Create template
+
+Edit template
+
+Delete template
+
+View template list
+
+Templates support dynamic variables:
+
+Hi {{name}},
+Following up regarding {{product}}.
+
+5.3 Customer Management (Basic CRM)
+
+User can:
+
+Add customer email
+
+Add name
+
+Add status:
+
+Interested
+
+Not Interested
+
+Busy
+
+Follow-up Later
+
+View last contact date
+
+View next reminder date
+
+5.4 Reminder System (Manual Logic – No Celery)
+
+User can:
+
+Set reminder date/time
+
+Dashboard shows:
+
+Upcoming reminders
+
+Overdue reminders
+
+Reminder check logic:
+
+When dashboard loads → compare current time with reminder time
+
+If due → show alert
+
+(No automatic background execution in Phase 1)
+
+5.5 Email Logs
+
+System stores:
+
+Template used
+
+Customer email
+
+Sent timestamp
+
+Manual status
+
+5.6 Dashboard Overview
+
+Dashboard shows:
+
+Total templates
+
+Total customers
+
+Pending follow-ups
+
+Completed follow-ups
+
+Recently sent emails
+
+🧩 Chrome Extension (Manifest v3)
+
+Purpose:
+Quick interaction inside Gmail.
+
+Features:
+
+Login with backend
+
+Fetch templates from server
+
+Dropdown template selector
+
+Insert template into Gmail compose window
+
+Replace dynamic variables before inserting
+
+Extension will:
+
+Use content.js to inject into Gmail
+
+Use popup.html for login + template selection
+
+Use fetch API to call Django backend
+
+6️⃣ Technical Architecture (Phase 1)
+Backend
+
+Django
+
+SQLite
+
+Django ORM
+
+REST APIs (basic)
+
+Web UI
+
+Django Templates
+
+Bootstrap or simple CSS
+
+Extension
+
+HTML
+
+CSS
+
+JavaScript
+
+Chrome APIs
+
+7️⃣ Database Design (SQLite)
+User
+
+id
+
+email
+
+password
+
+created_at
+
+Template
+
+id
+
+user (ForeignKey)
+
+title
+
+body
+
+created_at
+
+Customer
+
+id
+
+user (ForeignKey)
+
+name
+
+email
+
+status
+
+last_contact
+
+next_reminder
+
+EmailLog
+
+id
+
+user (ForeignKey)
+
+template (ForeignKey)
+
+customer (ForeignKey)
+
+sent_at
+
+status
+
+8️⃣ Non-Functional Requirements
+
+Secure password hashing
+
+Input validation
+
+Proper error handling
+
+Response time < 2 seconds
+
+Clean and responsive UI
+
+9️⃣ Risks & Mitigation
+Risk	Solution
+Gmail DOM changes	Use stable selectors
+Token issues	Proper login handling
+Reminder inaccuracy	Check at dashboard load
+Scaling SQLite	Migrate to PostgreSQL later
+
+
+🏁 Conclusion
+
+MailFlow MVP focuses on:
+
+Template efficiency
+
+Gmail integration
+
+Manual reminder tracking
+
+Centralized workflow management
+
+Designed to evolve into a scalable SaaS product.

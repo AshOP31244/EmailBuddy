@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Email Buddy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Lora:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+          --card: #f5f5f4;
+          --ring: #6366f1;
+          --input: #d6d3d1;
+          --primary: #6366f1;
+          --font-sans: Plus Jakarta Sans, sans-serif;
+          --background: #e7e5e4;
+          --font-serif: Lora, serif;
+          --foreground: #1e293b;
+          --destructive: #ef4444;
+          --shadow-blur: 10px;
+          --shadow-opacity: 0.18;
+          --shadow-offset-x: 2px;
+          --shadow-offset-y: 2px;
+          --primary-foreground: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--background);
+            color: var(--foreground);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .login-container {
+            background-color: var(--card);
+            border-radius: 1.25rem;
+            padding: 3rem;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: var(--shadow-offset-x) var(--shadow-offset-y) var(--shadow-blur) 4px rgba(0, 0, 0, var(--shadow-opacity));
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: var(--font-serif);
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--foreground);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--input);
+            border-radius: 0.75rem;
+            background-color: var(--card);
+            color: var(--foreground);
+            font-family: var(--font-sans);
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--ring);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-sans);
+            background-color: var(--primary);
+            color: var(--primary-foreground);
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .error {
+            color: var(--destructive);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            padding: 0.75rem;
+            background-color: #fee2e2;
+            border-radius: 0.5rem;
+            border: 1px solid #fca5a5;
+        }
+
+        .help-text {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>📧 Email Buddy</h1>
+            <p>Sign in to your account</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="error">
+                {% if form.non_field_errors %}
+                    {{ form.non_field_errors.0 }}
+                {% else %}
+                    Please correct the errors below.
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label class="form-label" for="id_username">Username</label>
+                <input 
+                    type="text" 
+                    name="username" 
+                    id="id_username" 
+                    class="form-input" 
+                    required 
+                    autofocus
+                    placeholder="Enter your username"
+                >
+                {% if form.username.errors %}
+                    <div class="error" style="margin-top: 0.5rem;">
+                        {{ form.username.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="id_password">Password</label>
+                <input 
+                    type="password" 
+                    name="password" 
+                    id="id_password" 
+                    class="form-input" 
+                    required
+                    placeholder="Enter your password"
+                >
+                {% if form.password.errors %}
+                    <div class="error" style="margin-top: 0.5rem;">
+                        {{ form.password.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <button type="submit" class="btn">🔐 Sign In</button>
+        </form>
+
+        <p class="help-text">
+            Don't have an account? Contact your administrator.
+        </p>
+    </div>
+</body>
+</html>

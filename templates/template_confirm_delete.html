@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Delete Template — Email Buddy{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Delete Template</h1><p>This action cannot be undone</p></div>
+<div class="card" style="max-width:520px">
+  <h3 style="color:var(--destructive);margin-bottom:1rem">⚠️ Confirm Deletion</h3>
+  <p style="margin-bottom:.5rem">You are about to delete:</p>
+  <p style="font-weight:700;font-size:1.05rem;margin-bottom:1.5rem">{{ template.title }}</p>
+  <form method="post" style="display:flex;gap:.75rem;flex-wrap:wrap">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-destructive">🗑️ Yes, Delete</button>
+    <a href="{% url 'template_list' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

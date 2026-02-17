@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Send Email — Email Buddy{% endblock %}
+{% block extra_css %}
+<style>
+  #save-as-section{display:none}
+  #id_body{min-height:200px}
+  .template-preview{
+    background:var(--muted);border-radius:.75rem;padding:1rem;
+    font-size:.85rem;color:var(--muted-fg);font-family:var(--font-mono);
+    white-space:pre-wrap;max-height:180px;overflow-y:auto;display:none;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Send Email</h1>
+  <p>Compose an email, optionally save the recipient as a customer and set a follow-up reminder</p>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start">
+
+  <!-- Left: compose form -->
+  <div class="card">
+    <form method="post" id="emailForm">
+      {% csrf_token %}
+
+      <!-- ── Recipient ─────────────────────────── -->
+      <h3 class="card-title">📬 Recipient</h3>
+      <div class="form-group">
+        <label class="form-label">{{ form.to_email.label }}</label>
+        {{ form.to_email }}
+        {% if form.to_email.errors %}<p style="color:var(--destructive);font-size:.82rem;margin-top:.3rem">{{ form.to_email.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{{ form.cc_emails.label }}</label>
+          {{ form.cc_emails }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.bcc_emails.label }}</label>
+          {{ form.bcc_emails }}
+        </div>
+      </div>
+
+      <!-- ── Content ───────────────────────────── -->
+      <h3 class="card-title" style="margin-top:.5rem">✍️ Content</h3>
+      <div class="form-group">
+        <label class="form-label">{{ form.template.label }}</label>
+        {{ form.template }}
+        <div class="template-preview" id="templatePreview"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.subject.label }}</label>
+        {{ form.subject }}
+        {% if form.subject.errors %}<p style="color:var(--destructive);font-size:.82rem;margin-top:.3rem">{{ form.subject.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">{{ form.body.label }}</label>
+        {{ form.body }}
+        {% if form.body.errors %}<p style="color:var(--destructive);font-size:.82rem;margin-top:.3rem">{{ form.body.errors.0 }}</p>{% endif %}
+      </div>
+
+      <!-- ── Save as customer ──────────────────── -->
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.5rem;padding:.9rem 1rem;background:var(--muted);border-radius:.75rem">
+        {{ form.save_as_customer }}
+        <label for="id_save_as_customer" style="font-weight:600;cursor:pointer;font-size:.93rem">
+          👤 Save recipient as a Customer
+        </label>
+      </div>
+
+      <div id="save-as-section" class="toggle-section">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">{{ form.recipient_name.label }}</label>
+            {{ form.recipient_name }}
+          </div>
+          <div class="form-group">
+            <label class="form-label">{{ form.customer_status.label }}</label>
+            {{ form.customer_status }}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.next_reminder.label }}</label>
+          {{ form.next_reminder }}
+          <small style="color:var(--muted-fg);display:block;margin-top:.35rem">Set a follow-up date to appear in Reminders</small>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap">
+        <button type="submit" class="btn btn-primary">📧 Log & Save Email</button>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right: tips -->
+  <div>
+    <div class="card">
+      <h3 class="card-title">💡 How it works</h3>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:.75rem">
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>1️⃣</span>Enter the recipient's email in the <strong>To</strong> field</li>
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>2️⃣</span>Add CC / BCC if needed (comma-separated)</li>
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>3️⃣</span>Pick a <strong>template</strong> to auto-fill the body, or write freely</li>
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>4️⃣</span>Toggle <em>"Save as Customer"</em> to create a contact record</li>
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>5️⃣</span>Set a <strong>follow-up reminder</strong> date for the customer</li>
+        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>6️⃣</span>Click <em>Log &amp; Save</em> — the send is recorded in Email Logs</li>
+      </ul>
+    </div>
+
+    <div class="tip-box">
+      <strong>Placeholders</strong><br>
+      Use <code>{{name}}</code> and <code>{{email}}</code> in your template body — they're replaced automatically when a customer record exists.
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Fetch template body via API and populate subject + body
+  const templateSelect  = document.getElementById('id_template_select');
+  const bodyField       = document.getElementById('id_body');
+  const subjectField    = document.querySelector('input[name="subject"]');
+  const previewBox      = document.getElementById('templatePreview');
+  const saveToggle      = document.getElementById('id_save_as_customer');
+  const saveSection     = document.getElementById('save-as-section');
+
+  async function loadTemplates(){
+    try{
+      const res  = await fetch('/api/templates/');
+      const data = await res.json();
+      return data.templates || [];
+    }catch(e){ return []; }
+  }
+
+  let allTemplates = [];
+  loadTemplates().then(t=>{ allTemplates = t; });
+
+  templateSelect.addEventListener('change', function(){
+    const id = parseInt(this.value);
+    const tpl = allTemplates.find(t=>t.id===id);
+    if(tpl){
+      bodyField.value = tpl.body;
+      previewBox.textContent = tpl.body;
+      previewBox.style.display = 'block';
+      if(!subjectField.value) subjectField.value = tpl.title;
+    } else {
+      previewBox.style.display = 'none';
+    }
+  });
+
+  saveToggle.addEventListener('change', function(){
+    saveSection.style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Maintain state on page reload
+  if(saveToggle.checked) saveSection.style.display = 'block';
+</script>
+{% endblock %}
