@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.contrib.auth.views import LogoutView
 
 urlpatterns = [
     # Dashboard
@@ -27,4 +28,23 @@ urlpatterns = [
 
     # Reminders
     path('reminders/',   views.reminders_view,   name='reminders'),
+    
+    # ========== ADD THESE NEW URLS (MISSING!) ==========
+    # Auth
+    path('signup/', views.signup_view, name='signup'),
+    path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+    
+    # Profile
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/edit/', views.profile_edit_view, name='profile_edit'),
+    
+    # Email Settings
+    path('email-settings/', views.email_settings_view, name='email_settings'),
+    path('email-settings/test/', views.test_smtp_view, name='test_smtp'),
+    
+    # PWA
+    path('install/', views.install_pwa_view, name='install_pwa'),
+    
+    # Theme toggle
+    path('toggle-theme/', views.toggle_theme, name='toggle_theme'),
 ]

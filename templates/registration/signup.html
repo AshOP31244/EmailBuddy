@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — Email Buddy</title>
+  <title>Sign Up — Email Buddy</title>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
   <style>
@@ -42,10 +42,10 @@
       border-radius: 24px;
       overflow: hidden;
       box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-      min-height: 650px;
+      min-height: 700px;
     }
 
-    /* ===== LEFT SIDE: BENEFITS ===== */
+    /* LEFT SIDE: Same as login */
     .auth-left {
       flex: 1;
       background: linear-gradient(135deg, #d97757 0%, #c5654a 100%);
@@ -134,13 +134,15 @@
       line-height: 1.6;
     }
 
-    /* ===== RIGHT SIDE: FORM ===== */
+    /* RIGHT SIDE: Form */
     .auth-right {
       flex: 1;
       padding: 3rem;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      max-height: 700px;
+      overflow-y: auto;
     }
 
     .auth-header {
@@ -161,7 +163,7 @@
     }
 
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     .form-label {
@@ -190,24 +192,14 @@
       box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1);
     }
 
-    .password-wrapper {
-      position: relative;
+    .form-input.error {
+      border-color: #ef4444;
     }
 
-    .password-toggle {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--text-muted);
-      padding: 0.25rem;
-    }
-
-    .password-toggle:hover {
-      color: var(--primary);
+    .error-text {
+      color: #ef4444;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
     }
 
     .btn-primary {
@@ -248,17 +240,6 @@
       text-decoration: underline;
     }
 
-    .error-message {
-      background: #fee2e2;
-      color: #991b1b;
-      padding: 0.875rem 1rem;
-      border-radius: 10px;
-      font-size: 0.875rem;
-      margin-bottom: 1.5rem;
-      border-left: 4px solid #ef4444;
-    }
-
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
       .auth-container {
         flex-direction: column;
@@ -267,15 +248,20 @@
 
       .auth-left {
         padding: 2rem;
-        min-height: 300px;
+        min-height: 250px;
       }
 
       .auth-right {
         padding: 2rem;
+        max-height: none;
       }
 
       .auth-benefits {
         gap: 1.5rem;
+      }
+
+      .benefit {
+        gap: 0.75rem;
       }
 
       .benefit-content h3 {
@@ -291,7 +277,7 @@
 <body>
 
 <div class="auth-container">
-  <!-- LEFT SIDE: Benefits -->
+  <!-- LEFT SIDE: Benefits (same as login) -->
   <div class="auth-left">
     <div class="auth-left-content">
       <div class="auth-logo">
@@ -306,7 +292,7 @@
           </div>
           <div class="benefit-content">
             <h3>Send Emails with Ease</h3>
-            <p>Use your own email account to send professional emails with customizable templates and tracking.</p>
+            <p>Use your own email account to send professional emails with customizable templates.</p>
           </div>
         </div>
 
@@ -316,7 +302,7 @@
           </div>
           <div class="benefit-content">
             <h3>Manage Customers</h3>
-            <p>Keep track of all your contacts, their status, and schedule follow-up reminders effortlessly.</p>
+            <p>Track contacts, their status, and never miss a follow-up with smart reminders.</p>
           </div>
         </div>
 
@@ -326,100 +312,80 @@
           </div>
           <div class="benefit-content">
             <h3>Reusable Templates</h3>
-            <p>Create email templates once and reuse them. Supports both plain text and HTML emails with placeholders.</p>
-          </div>
-        </div>
-
-        <div class="benefit">
-          <div class="benefit-icon">
-            <span class="material-symbols-outlined">notifications</span>
-          </div>
-          <div class="benefit-content">
-            <h3>Never Miss Follow-ups</h3>
-            <p>Set reminder dates for each customer and get notified when it's time to reach out again.</p>
+            <p>Create once, use forever. HTML and plain text templates with smart placeholders.</p>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- RIGHT SIDE: Login Form -->
+  <!-- RIGHT SIDE: Signup Form -->
   <div class="auth-right">
     <div class="auth-header">
-      <h2>Welcome back</h2>
-      <p>Sign in to your account to continue</p>
+      <h2>Create your account</h2>
+      <p>Start managing your emails professionally</p>
     </div>
 
-    {% if form.errors or form.non_field_errors %}
-      <div class="error-message">
-        {% if form.non_field_errors %}
-          {{ form.non_field_errors.0 }}
-        {% else %}
-          Please correct the errors below.
-        {% endif %}
-      </div>
-    {% endif %}
-
-    <form method="post" action="{% url 'login' %}">
+    <form method="post">
       {% csrf_token %}
       
       <div class="form-group">
-        <label class="form-label" for="id_username">Username</label>
-        <input 
-          type="text" 
-          name="username" 
-          id="id_username" 
-          class="form-input" 
-          required 
-          autofocus
-          placeholder="Enter your username"
-        >
+        <label class="form-label" for="{{ form.username.id_for_label }}">Username *</label>
+        {{ form.username }}
+        {% if form.username.errors %}
+          <p class="error-text">{{ form.username.errors.0 }}</p>
+        {% endif %}
       </div>
 
       <div class="form-group">
-        <label class="form-label" for="id_password">Password</label>
-        <div class="password-wrapper">
-          <input 
-            type="password" 
-            name="password" 
-            id="id_password" 
-            class="form-input" 
-            required
-            placeholder="Enter your password"
-          >
-          <button type="button" class="password-toggle" onclick="togglePassword()">
-            <span class="material-symbols-outlined" id="passwordIcon">visibility</span>
-          </button>
+        <label class="form-label" for="{{ form.email.id_for_label }}">Email *</label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <p class="error-text">{{ form.email.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.first_name.id_for_label }}">First Name</label>
+          {{ form.first_name }}
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.last_name.id_for_label }}">Last Name</label>
+          {{ form.last_name }}
         </div>
       </div>
 
-      <input type="hidden" name="next" value="{{ next }}">
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password1.id_for_label }}">Password *</label>
+        {{ form.password1 }}
+        {% if form.password1.errors %}
+          <p class="error-text">{{ form.password1.errors.0 }}</p>
+        {% endif %}
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+          At least 8 characters
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm Password *</label>
+        {{ form.password2 }}
+        {% if form.password2.errors %}
+          <p class="error-text">{{ form.password2.errors.0 }}</p>
+        {% endif %}
+      </div>
 
       <button type="submit" class="btn-primary">
-        Sign In
+        Create Account
       </button>
     </form>
 
     <div class="auth-footer">
-      Don't have an account? <a href="{% url 'signup' %}">Sign up</a>
+      Already have an account? <a href="{% url 'login' %}">Sign in</a>
     </div>
   </div>
 </div>
-
-<script>
-  function togglePassword() {
-    const passwordInput = document.getElementById('id_password');
-    const passwordIcon = document.getElementById('passwordIcon');
-    
-    if (passwordInput.type === 'password') {
-      passwordInput.type = 'text';
-      passwordIcon.textContent = 'visibility_off';
-    } else {
-      passwordInput.type = 'password';
-      passwordIcon.textContent = 'visibility';
-    }
-  }
-</script>
 
 </body>
 </html>

@@ -1,0 +1,7 @@
+now i want to implement the feature like this person can sign in and start using the emailbuddy and can login anytime 
+to send email he has to go on the profile add his mail id from which he has to send the emails along with the
+ app password (for this app password there should be a small guide kinda button or something that will help generate the 
+app password required to send the mails from their emails )
+then start sending the mails 
+and every thing should be ,obile frinedly 
+what all changes i have to make do i need to make a new app for authentications ?

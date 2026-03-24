@@ -3,29 +3,144 @@
 {% block extra_css %}
 <style>
   #save-as-section{display:none}
-  #id_body{min-height:200px}
-  .template-preview{
-    background:var(--muted);border-radius:.75rem;padding:1rem;
-    font-size:.85rem;color:var(--muted-fg);font-family:var(--font-mono);
-    white-space:pre-wrap;max-height:180px;overflow-y:auto;display:none;
+  #id_body{min-height:200px;font-family:var(--font-mono);font-size:.88rem}
+  .how-section{background:var(--accent);border-radius:var(--radius);padding:1.5rem;border-left:4px solid var(--primary)}
+  .how-section h3{margin-bottom:1rem;font-size:1.05rem}
+  .how-steps{display:flex;flex-direction:column;gap:.85rem}
+  .how-step{display:flex;gap:.75rem;align-items:start}
+  .step-num{
+    background:var(--primary);color:#fff;
+    width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:.85rem;flex-shrink:0;
   }
+  .step-text{font-size:.9rem;line-height:1.5;color:var(--foreground)}
+  .step-text strong{color:var(--primary)}
+  
+  /* ── Modal Overlay ───────────────────────────── */
+.modal-overlay{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  padding:2rem;
+}
+
+.modal-overlay.show{
+  display:flex !important;
+}
+
+/* ── Modal Container ─────────────────────────── */
+.modal-content{
+  background:#ffffff;   /* force solid background */
+  color:#111827;        /* force readable text */
+  border-radius:16px;
+  width:100%;
+  max-width:820px;
+  max-height:90vh;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 30px 80px rgba(0,0,0,0.45);
+  animation:modalFadeIn .25s ease;
+  overflow:hidden;
+}
+
+/* Smooth entrance animation */
+@keyframes modalFadeIn{
+  from{
+    opacity:0;
+    transform:translateY(15px) scale(.98);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0) scale(1);
+  }
+}
+
+/* ── Header ───────────────────────────────────── */
+.modal-header{
+  padding:1.5rem 2rem;
+  border-bottom:1px solid #e5e7eb;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:#f9fafb;
+}
+
+.modal-header h2{
+  font-size:1.3rem;
+  font-weight:700;
+  margin:0;
+}
+
+/* ── Close Button ───────────────────────────── */
+.modal-close{
+  background:#f3f4f6;
+  border:none;
+  font-size:1.2rem;
+  cursor:pointer;
+  color:#374151;
+  width:34px;
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  transition:.2s;
+}
+
+.modal-close:hover{
+  background:#e5e7eb;
+}
+
+/* ── Body ───────────────────────────────────── */
+.modal-body{
+  padding:2rem;
+  overflow-y:auto;
+  flex:1;
+  background:#ffffff;
+}
+
+/* ── Footer ─────────────────────────────────── */
+.modal-footer{
+  padding:1.25rem 2rem;
+  border-top:1px solid #e5e7eb;
+  display:flex;
+  gap:.75rem;
+  justify-content:flex-end;
+  background:#f9fafb;
+}
+.preview-body{
+  background:#f9fafb;
+  border-radius:12px;
+  padding:1.5rem;
+  min-height:180px;
+  white-space:pre-wrap;
+  font-size:.95rem;
+  line-height:1.6;
+  border:1px solid #e5e7eb;
+}
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="page-header">
   <h1>Send Email</h1>
-  <p>Compose an email, optionally save the recipient as a customer and set a follow-up reminder</p>
+  <p>Compose, preview, and send professional emails</p>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start">
-
-  <!-- Left: compose form -->
+<div class="email-grid" style="display:grid;grid-template-columns:1fr 380px;gap:1.75rem;align-items:start">
+  <!-- Left: Form -->
   <div class="card">
     <form method="post" id="emailForm">
       {% csrf_token %}
 
-      <!-- ── Recipient ─────────────────────────── -->
       <h3 class="card-title">📬 Recipient</h3>
       <div class="form-group">
         <label class="form-label">{{ form.to_email.label }}</label>
@@ -43,12 +158,10 @@
         </div>
       </div>
 
-      <!-- ── Content ───────────────────────────── -->
-      <h3 class="card-title" style="margin-top:.5rem">✍️ Content</h3>
+      <h3 class="card-title" style="margin-top:.75rem">✍️ Content</h3>
       <div class="form-group">
         <label class="form-label">{{ form.template.label }}</label>
         {{ form.template }}
-        <div class="template-preview" id="templatePreview"></div>
       </div>
       <div class="form-group">
         <label class="form-label">{{ form.subject.label }}</label>
@@ -60,12 +173,16 @@
         {{ form.body }}
         {% if form.body.errors %}<p style="color:var(--destructive);font-size:.82rem;margin-top:.3rem">{{ form.body.errors.0 }}</p>{% endif %}
       </div>
+      
+      <div style="display:flex;align-items:center;gap:.65rem;padding:.65rem 0">
+        {{ form.is_html }}
+        <label for="id_is_html" style="font-weight:600;cursor:pointer;font-size:.9rem">🌐 HTML Email</label>
+      </div>
 
-      <!-- ── Save as customer ──────────────────── -->
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.5rem;padding:.9rem 1rem;background:var(--muted);border-radius:.75rem">
+      <div style="display:flex;align-items:center;gap:.65rem;margin-top:.5rem;padding:.9rem 1rem;background:var(--muted);border-radius:.75rem">
         {{ form.save_as_customer }}
         <label for="id_save_as_customer" style="font-weight:600;cursor:pointer;font-size:.93rem">
-          👤 Save recipient as a Customer
+          👤 Save recipient as Customer
         </label>
       </div>
 
@@ -83,80 +200,257 @@
         <div class="form-group">
           <label class="form-label">{{ form.next_reminder.label }}</label>
           {{ form.next_reminder }}
-          <small style="color:var(--muted-fg);display:block;margin-top:.35rem">Set a follow-up date to appear in Reminders</small>
+          <small style="color:var(--muted-fg);display:block;margin-top:.35rem">Set a follow-up date</small>
         </div>
       </div>
 
-      <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap">
-        <button type="submit" class="btn btn-primary">📧 Log & Save Email</button>
+      <div style="display:flex;gap:.75rem;margin-top:1.5rem;flex-wrap:wrap">
+        <button type="button" id="previewBtn" class="btn btn-primary">👁 Preview Email</button>
+        <button type="submit" name="send" class="btn btn-secondary">📧 Send Directly</button>
         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Cancel</a>
       </div>
     </form>
   </div>
 
-  <!-- Right: tips -->
+  <!-- Right: How it works -->
   <div>
-    <div class="card">
-      <h3 class="card-title">💡 How it works</h3>
-      <ul style="list-style:none;display:flex;flex-direction:column;gap:.75rem">
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>1️⃣</span>Enter the recipient's email in the <strong>To</strong> field</li>
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>2️⃣</span>Add CC / BCC if needed (comma-separated)</li>
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>3️⃣</span>Pick a <strong>template</strong> to auto-fill the body, or write freely</li>
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>4️⃣</span>Toggle <em>"Save as Customer"</em> to create a contact record</li>
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>5️⃣</span>Set a <strong>follow-up reminder</strong> date for the customer</li>
-        <li style="display:flex;gap:.6rem;font-size:.88rem"><span>6️⃣</span>Click <em>Log &amp; Save</em> — the send is recorded in Email Logs</li>
-      </ul>
+    <div class="how-section">
+      <h3>💡 How it works</h3>
+      <div class="how-steps">
+        <div class="how-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Enter the recipient's email in <strong>To</strong></div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">2</div>
+          <div class="step-text">Add <strong>CC/BCC</strong> if needed (comma-separated)</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Pick a <strong>template</strong> or write freely</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">4</div>
+          <div class="step-text">Toggle <strong>"Save as Customer"</strong> to track this contact</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">5</div>
+          <div class="step-text">Click <strong>"Preview"</strong> to see final email</div>
+        </div>
+        <div class="how-step">
+          <div class="step-num">6</div>
+          <div class="step-text">Send from preview or click <strong>"Send Directly"</strong></div>
+        </div>
+      </div>
     </div>
 
-    <div class="tip-box">
+    <div class="tip-box" style="margin-top:1rem">
       <strong>Placeholders</strong><br>
-      Use <code>{{name}}</code> and <code>{{email}}</code> in your template body — they're replaced automatically when a customer record exists.
+      Use <code>{{name}}</code> and <code>{{email}}</code> — they're replaced automatically when a customer record exists.
     </div>
   </div>
+</div>
 
+<!-- ══════════════════════════════════════════════════════
+     PREVIEW MODAL
+     ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>📧 Email Preview</h2>
+      <button type="button" class="modal-close" id="closeModal">✕</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="alert-preview">
+        ⚠️ <strong>Preview mode:</strong> Review your email before sending
+      </div>
+      
+      <div class="preview-section">
+        <div class="preview-field">
+          <div class="preview-label">To:</div>
+          <div class="preview-value"><strong id="previewTo"></strong></div>
+        </div>
+        
+        <div class="preview-field" id="previewCcRow" style="display:none">
+          <div class="preview-label">CC:</div>
+          <div class="preview-value" id="previewCc"></div>
+        </div>
+        
+        <div class="preview-field" id="previewBccRow" style="display:none">
+          <div class="preview-label">BCC:</div>
+          <div class="preview-value" id="previewBcc"></div>
+        </div>
+        
+        <div class="preview-field" style="margin-top:1rem">
+          <div class="preview-label">Subject:</div>
+          <div class="preview-value"><strong id="previewSubject" style="font-size:1.08rem"></strong></div>
+        </div>
+      </div>
+      
+      <div class="preview-section">
+        <h3 style="font-size:.95rem;font-weight:600;color:var(--muted-fg);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.05em">Email Body</h3>
+        <div class="preview-body" id="previewBody"></div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button type="button" id="sendFromPreview" class="btn btn-primary">✅ Send Now</button>
+      <button type="button" id="closeModal2" class="btn btn-secondary">✏️ Edit Email</button>
+    </div>
+  </div>
 </div>
 
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Fetch template body via API and populate subject + body
-  const templateSelect  = document.getElementById('id_template_select');
-  const bodyField       = document.getElementById('id_body');
-  const subjectField    = document.querySelector('input[name="subject"]');
-  const previewBox      = document.getElementById('templatePreview');
-  const saveToggle      = document.getElementById('id_save_as_customer');
-  const saveSection     = document.getElementById('save-as-section');
+  const templateSelect = document.getElementById('id_template_select');
+  const bodyField      = document.getElementById('id_body');
+  const subjectField   = document.querySelector('input[name="subject"]');
+  const toField        = document.querySelector('input[name="to_email"]');
+  const ccField        = document.querySelector('input[name="cc_emails"]');
+  const bccField       = document.querySelector('input[name="bcc_emails"]');
+  const isHtmlCheckbox = document.getElementById('id_is_html');
+  const saveToggle     = document.getElementById('id_save_as_customer');
+  const saveSection    = document.getElementById('save-as-section');
+  const previewBtn     = document.getElementById('previewBtn');
+  const previewModal   = document.getElementById('previewModal');
+  const closeModalBtns = [document.getElementById('closeModal'), document.getElementById('closeModal2')];
+  const sendFromPreview = document.getElementById('sendFromPreview');
+  const emailForm      = document.getElementById('emailForm');
 
+  let allTemplates = [];
+
+  // Load templates
   async function loadTemplates(){
     try{
-      const res  = await fetch('/api/templates/');
+      const res = await fetch('/api/templates/');
       const data = await res.json();
       return data.templates || [];
     }catch(e){ return []; }
   }
+  loadTemplates().then(t => { allTemplates = t; });
 
-  let allTemplates = [];
-  loadTemplates().then(t=>{ allTemplates = t; });
+  // Template select handler
+  if(templateSelect){
+    templateSelect.addEventListener('change', function(){
+      const id = parseInt(this.value);
+      const tpl = allTemplates.find(t => t.id === id);
+      if(tpl){
+        bodyField.value = tpl.body;
+        if(!subjectField.value) subjectField.value = tpl.title;
+        isHtmlCheckbox.checked = (tpl.template_type === 'html');
+      }
+    });
+  }
 
-  templateSelect.addEventListener('change', function(){
-    const id = parseInt(this.value);
-    const tpl = allTemplates.find(t=>t.id===id);
-    if(tpl){
-      bodyField.value = tpl.body;
-      previewBox.textContent = tpl.body;
-      previewBox.style.display = 'block';
-      if(!subjectField.value) subjectField.value = tpl.title;
-    } else {
-      previewBox.style.display = 'none';
-    }
-  });
-
+  // Save as customer toggle
   saveToggle.addEventListener('change', function(){
     saveSection.style.display = this.checked ? 'block' : 'none';
   });
-
-  // Maintain state on page reload
   if(saveToggle.checked) saveSection.style.display = 'block';
+
+  // Preview button
+  previewBtn.addEventListener('click', function(e){
+    e.preventDefault();
+    
+    // Basic validation
+    if(!toField.value.trim()){
+      alert('Please enter a recipient email');
+      toField.focus();
+      return;
+    }
+    if(!subjectField.value.trim()){
+      alert('Please enter a subject');
+      subjectField.focus();
+      return;
+    }
+    if(!bodyField.value.trim()){
+      alert('Please enter email body');
+      bodyField.focus();
+      return;
+    }
+
+    // Build preview
+    let body = bodyField.value;
+    const recipientName = document.querySelector('input[name="recipient_name"]')?.value || '';
+    
+    // Replace placeholders
+    if(recipientName) body = body.replace(/\{\{name\}\}/g, recipientName);
+    body = body.replace(/\{\{email\}\}/g, toField.value);
+
+    // Populate modal
+    document.getElementById('previewTo').textContent = toField.value;
+    
+    const cc = ccField.value.trim();
+    const ccRow = document.getElementById('previewCcRow');
+    if(cc){
+      document.getElementById('previewCc').textContent = cc;
+      ccRow.style.display = 'flex';
+    } else {
+      ccRow.style.display = 'none';
+    }
+    
+    const bcc = bccField.value.trim();
+    const bccRow = document.getElementById('previewBccRow');
+    if(bcc){
+      document.getElementById('previewBcc').textContent = bcc;
+      bccRow.style.display = 'flex';
+    } else {
+      bccRow.style.display = 'none';
+    }
+    
+    document.getElementById('previewSubject').textContent = subjectField.value;
+    
+    const previewBodyEl = document.getElementById('previewBody');
+    if(isHtmlCheckbox.checked){
+      previewBodyEl.innerHTML = body;
+      previewBodyEl.classList.add('html-render');
+    } else {
+      previewBodyEl.textContent = body;
+      previewBodyEl.classList.remove('html-render');
+    }
+
+    // Show modal
+    previewModal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  });
+
+  // Close modal
+  closeModalBtns.forEach(btn => {
+    btn.addEventListener('click', function(){
+      previewModal.classList.remove('show');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Click outside to close
+  previewModal.addEventListener('click', function(e){
+    if(e.target === previewModal){
+      previewModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // ESC key to close
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && previewModal.classList.contains('show')){
+      previewModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  });
+
+  // Send from preview
+  sendFromPreview.addEventListener('click', function(){
+    // Create a hidden input to indicate send action
+    const sendInput = document.createElement('input');
+    sendInput.type = 'hidden';
+    sendInput.name = 'send';
+    sendInput.value = '1';
+    emailForm.appendChild(sendInput);
+    
+    emailForm.submit();
+  });
 </script>
 {% endblock %}

@@ -1,8 +1,9 @@
 from pathlib import Path
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-temp-key-change-in-production'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-temp-key-change-in-production')
 
 DEBUG = True
 
@@ -17,6 +18,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
 ]
+
+FIELD_ENCRYPTION_KEY = config('FIELD_ENCRYPTION_KEY', default=None)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -102,3 +105,21 @@ MESSAGE_TAGS = {
     messages.WARNING: 'warning',
     messages.ERROR: 'error',
 }
+
+# ══════════════════════════════════════════════════════════════
+# EMAIL CONFIGURATION
+# ══════════════════════════════════════════════════════════════
+
+# For DEVELOPMENT: Console backend (prints emails to terminal)
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# For PRODUCTION: SMTP backend (actually sends emails)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+# Gmail SMTP Settings (recommended for easy setup)
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'ashwaz@shubhamtanks.com'  
+EMAIL_HOST_PASSWORD = 'gqzn qljq hbvy zcko'  
+DEFAULT_FROM_EMAIL = 'ashwaz@shubhamtanks.com'

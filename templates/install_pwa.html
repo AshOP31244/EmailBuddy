@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Install Email Buddy — PWA{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Install Email Buddy</h1>
+  <p>Use Email Buddy as a standalone app on your device</p>
+</div>
+
+<div style="max-width: 800px;">
+  <div class="card">
+    <h3 class="card-title">Why Install?</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+      <div style="text-align: center;">
+        <span class="material-symbols-outlined" style="font-size: 48px; color: var(--primary); margin-bottom: 0.5rem;">offline_bolt</span>
+        <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Offline Access</h4>
+        <p style="font-size: 0.875rem; color: var(--muted-fg);">Access your data even without internet</p>
+      </div>
+
+      <div style="text-align: center;">
+        <span class="material-symbols-outlined" style="font-size: 48px; color: var(--primary); margin-bottom: 0.5rem;">rocket_launch</span>
+        <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Faster Performance</h4>
+        <p style="font-size: 0.875rem; color: var(--muted-fg);">Native app-like experience</p>
+      </div>
+
+      <div style="text-align: center;">
+        <span class="material-symbols-outlined" style="font-size: 48px; color: var(--primary); margin-bottom: 0.5rem;">home_app_logo</span>
+        <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Home Screen</h4>
+        <p style="font-size: 0.875rem; color: var(--muted-fg);">Quick access from your home screen</p>
+      </div>
+    </div>
+
+    <div style="background: rgba(217, 119, 87, 0.05); padding: 1.5rem; border-radius: var(--radius-lg); border: 1px solid rgba(217, 119, 87, 0.2);">
+      <h4 style="font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <span class="material-symbols-outlined" style="color: var(--primary);">info</span>
+        Installation Instructions
+      </h4>
+
+      <!-- Chrome/Edge Desktop -->
+      <details style="margin-bottom: 1rem;">
+        <summary style="font-weight: 600; cursor: pointer; padding: 0.5rem 0;">
+          <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 20px;">computer</span>
+          Chrome / Edge (Desktop)
+        </summary>
+        <div style="padding: 1rem 0 1rem 2rem; color: var(--muted-fg); font-size: 0.9rem;">
+          <ol style="padding-left: 1.25rem;">
+            <li style="margin-bottom: 0.5rem;">Click the <strong>install icon</strong> (⊕) in the address bar</li>
+            <li style="margin-bottom: 0.5rem;">Or click the three dots menu → <strong>Install Email Buddy</strong></li>
+            <li style="margin-bottom: 0.5rem;">Click <strong>Install</strong> in the popup</li>
+            <li>Email Buddy will open as a standalone app!</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Safari iOS -->
+      <details style="margin-bottom: 1rem;">
+        <summary style="font-weight: 600; cursor: pointer; padding: 0.5rem 0;">
+          <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 20px;">phone_iphone</span>
+          Safari (iPhone/iPad)
+        </summary>
+        <div style="padding: 1rem 0 1rem 2rem; color: var(--muted-fg); font-size: 0.9rem;">
+          <ol style="padding-left: 1.25rem;">
+            <li style="margin-bottom: 0.5rem;">Tap the <strong>Share button</strong> (square with arrow)</li>
+            <li style="margin-bottom: 0.5rem;">Scroll down and tap <strong>Add to Home Screen</strong></li>
+            <li style="margin-bottom: 0.5rem;">Tap <strong>Add</strong> in the top right</li>
+            <li>Email Buddy icon will appear on your home screen!</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Chrome Android -->
+      <details>
+        <summary style="font-weight: 600; cursor: pointer; padding: 0.5rem 0;">
+          <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 20px;">smartphone</span>
+          Chrome (Android)
+        </summary>
+        <div style="padding: 1rem 0 1rem 2rem; color: var(--muted-fg); font-size: 0.9rem;">
+          <ol style="padding-left: 1.25rem;">
+            <li style="margin-bottom: 0.5rem;">Tap the three dots menu (⋮)</li>
+            <li style="margin-bottom: 0.5rem;">Tap <strong>Add to Home screen</strong></li>
+            <li style="margin-bottom: 0.5rem;">Tap <strong>Install</strong> or <strong>Add</strong></li>
+            <li>Email Buddy will be available on your home screen!</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+
+    <div style="margin-top: 1.5rem; text-align: center;">
+      <button id="installBtn" class="btn btn-primary" style="display: none;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">install_mobile</span>
+        Install Now
+      </button>
+      <p style="font-size: 0.875rem; color: var(--muted-fg); margin-top: 1rem;">
+        Once installed, Email Buddy will work just like a native app!
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // PWA Install Prompt
+  let deferredPrompt;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'inline-flex';
+  });
+
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`User response to install prompt: ${outcome}`);
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    }
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    deferredPrompt = null;
+  });
+</script>
+
+{% endblock %}

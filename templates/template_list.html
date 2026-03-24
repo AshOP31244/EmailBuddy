@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header">
   <h1>Templates</h1>
-  <p>Create reusable email bodies with placeholders</p>
+  <p>Create reusable email bodies — plain text or HTML</p>
 </div>
 <div style="margin-bottom:1.25rem">
   <a href="{% url 'template_create' %}" class="btn btn-primary">➕ New Template</a>
@@ -13,13 +13,20 @@
   <div class="table-wrap">
     <table>
       <thead>
-        <tr><th>Title</th><th>Preview</th><th>Created</th><th>Actions</th></tr>
+        <tr><th>Title</th><th>Type</th><th>Preview</th><th>Created</th><th>Actions</th></tr>
       </thead>
       <tbody>
         {% for t in templates %}
         <tr>
           <td><strong>{{ t.title }}</strong></td>
-          <td style="color:var(--muted-fg);font-size:.85rem">{{ t.body|truncatewords:12 }}</td>
+          <td>
+            {% if t.template_type == 'html' %}
+              <span class="badge" style="background:#dbeafe;color:#1e40af">🌐 HTML</span>
+            {% else %}
+              <span class="badge" style="background:#f3f4f6;color:#4b5563">📝 Text</span>
+            {% endif %}
+          </td>
+          <td style="color:var(--muted-fg);font-size:.85rem">{{ t.body|truncatewords:10 }}</td>
           <td style="font-size:.82rem;white-space:nowrap">{{ t.created_at|date:"d M Y" }}</td>
           <td class="action-links">
             <a href="{% url 'template_edit' t.id %}">✏️ Edit</a>

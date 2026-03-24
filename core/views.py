@@ -1,10 +1,15 @@
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
+from django.utils import timezone 
 from django.contrib import messages
-from .models import Template, Customer, EmailLog
-from .forms import TemplateForm, CustomerForm, QuickEmailSendForm
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.conf import settings
+from .models import Template, Customer, EmailLog, UserProfile, UserEmailSettings
+from .forms import TemplateForm, CustomerForm, QuickEmailSendForm, SignUpForm, ProfileForm, EmailSettingsForm
+from django.contrib.auth import login
+from django.contrib.auth.forms import AuthenticationForm
+from .utils import send_email_with_user_smtp, test_smtp_connection
 
 
 @login_required
@@ -27,7 +32,7 @@ def dashboard(request):
 
 @login_required
 def api_templates(request):
-    data = list(Template.objects.filter(user=request.user).values('id', 'title', 'body'))
+    data = list(Template.objects.filter(user=request.user).values('id', 'title', 'body', 'template_type'))
     return JsonResponse({'templates': data})
 
 
@@ -127,7 +132,7 @@ def customer_detail(request, pk):
     return render(request, 'customer_detail.html', {'customer': customer, 'email_logs': email_logs})
 
 
-# ── Email Send ────────────────────────────────────────────────
+# ── Email Send with ACTUAL EMAIL SENDING ──────────────────────
 
 @login_required
 def email_send(request):
@@ -135,6 +140,11 @@ def email_send(request):
 
     if request.method == 'POST' and form.is_valid():
         cd = form.cleaned_data
+
+        # Check if user has email settings
+        if not hasattr(request.user, 'email_settings'):
+            messages.error(request, 'Please configure your email settings first!')
+            return redirect('email_settings')
 
         customer = None
         existing = Customer.objects.filter(user=request.user, email=cd['to_email']).first()
@@ -166,24 +176,47 @@ def email_send(request):
         if customer:
             body = body.replace('{{name}}', customer.name).replace('{{email}}', customer.email)
 
+        # ══════════════════════════════════════════════════════
+        # SEND EMAIL USING USER'S SMTP
+        # ══════════════════════════════════════════════════════
+        email_status = 'Sent'
+        
+        success, error = send_email_with_user_smtp(
+            user=request.user,
+            subject=cd['subject'],
+            body=body,
+            to_emails=[cd['to_email']],
+            cc_list=cd.get('cc_emails', []),
+            bcc_list=cd.get('bcc_emails', []),
+            is_html=cd.get('is_html', False)
+        )
+        
+        if not success:
+            email_status = 'Failed'
+            messages.error(request, f'Email failed to send: {error}')
+
+        # Log the email
         EmailLog.objects.create(
             user       = request.user,
             template   = cd.get('template'),
             customer   = customer,
             to_email   = cd['to_email'],
-            cc_emails  = ', '.join(cd['cc_emails']),
-            bcc_emails = ', '.join(cd['bcc_emails']),
+            cc_emails  = ', '.join(cd.get('cc_emails', [])),
+            bcc_emails = ', '.join(cd.get('bcc_emails', [])),
             subject    = cd['subject'],
             body_sent  = body,
-            status     = 'Sent',
+            is_html    = cd.get('is_html', False),
+            status     = email_status,
         )
 
-        parts = ['Email logged']
-        if cd['save_as_customer']:
-            parts.append('recipient saved as customer')
-        if cd.get('next_reminder'):
-            parts.append('follow-up reminder set')
-        messages.success(request, ' · '.join(parts) + '!')
+        if email_status == 'Sent':
+            parts = ['Email sent successfully']
+            if cd['save_as_customer']:
+                parts.append('recipient saved as customer')
+            if cd.get('next_reminder'):
+                parts.append('follow-up reminder set')
+            messages.success(request, ' · '.join(parts) + '!')
+        
         return redirect('email_log_list')
 
     return render(request, 'email_send.html', {'form': form})
@@ -204,3 +237,138 @@ def reminders_view(request):
         user=request.user, next_reminder__lt=now,
         next_reminder__isnull=False).order_by('next_reminder')
     return render(request, 'reminders.html', {'upcoming': upcoming, 'overdue': overdue})
+
+
+
+
+# ========== AUTHENTICATION VIEWS ==========
+
+def signup_view(request):
+    """User registration"""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, 'Account created successfully!')
+            return redirect('email_settings')  # Redirect to setup email
+    else:
+        form = SignUpForm()
+    
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+# ========== PROFILE VIEWS ==========
+
+@login_required
+def profile_view(request):
+    """View user profile"""
+    profile = request.user.profile
+    has_email_settings = hasattr(request.user, 'email_settings')
+    
+    context = {
+        'profile': profile,
+        'has_email_settings': has_email_settings,
+    }
+    return render(request, 'profile.html', context)
+
+
+@login_required
+def profile_edit_view(request):
+    """Edit user profile"""
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, request.FILES, instance=profile, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('profile')
+    else:
+        form = ProfileForm(instance=profile, user=request.user)
+    
+    return render(request, 'profile_edit.html', {'form': form})
+
+
+@login_required
+def toggle_theme(request):
+    """Toggle dark mode"""
+    profile = request.user.profile
+    profile.dark_mode = not profile.dark_mode
+    profile.save()
+    return JsonResponse({'dark_mode': profile.dark_mode})
+
+
+# ========== EMAIL SETTINGS VIEWS ==========
+
+@login_required
+def email_settings_view(request):
+    """Configure SMTP settings"""
+    try:
+        settings_obj = request.user.email_settings
+    except UserEmailSettings.DoesNotExist:
+        settings_obj = None
+    
+    if request.method == 'POST':
+        form = EmailSettingsForm(request.POST, instance=settings_obj)
+        if form.is_valid():
+            settings = form.save(commit=False)
+            settings.user = request.user
+            
+            # Encrypt and save password if provided
+            password = form.cleaned_data.get('smtp_password')
+            if password:
+                settings.set_password(password)
+            
+            settings.save()
+            messages.success(request, 'Email settings saved! Test your connection below.')
+            return redirect('email_settings')
+    else:
+        form = EmailSettingsForm(instance=settings_obj)
+    
+    return render(request, 'email_settings.html', {
+        'form': form,
+        'settings': settings_obj,
+    })
+
+
+@login_required
+def test_smtp_view(request):
+    """Test SMTP connection"""
+    if request.method == 'POST':
+        try:
+            settings = request.user.email_settings
+            password = settings.get_password()
+            
+            success, error = test_smtp_connection(
+                settings.smtp_host,
+                settings.smtp_port,
+                settings.smtp_email,
+                password,
+                settings.smtp_use_tls
+            )
+            
+            if success:
+                settings.is_verified = True
+                settings.last_verified = timezone.now()
+                settings.save()
+                return JsonResponse({'success': True, 'message': 'Connection successful!'})
+            else:
+                return JsonResponse({'success': False, 'message': f'Connection failed: {error}'})
+                
+        except UserEmailSettings.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Please configure email settings first'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request'})
+
+
+# ========== PWA VIEW ==========
+
+def install_pwa_view(request):
+    """PWA installation guide"""
+    return render(request, 'install_pwa.html')

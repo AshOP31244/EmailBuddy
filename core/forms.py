@@ -1,5 +1,7 @@
 from django import forms
-from .models import Template, Customer
+from .models import Template, Customer ,UserProfile, UserEmailSettings
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
 
 
 INPUT_CLS = 'form-input'
@@ -8,16 +10,18 @@ INPUT_CLS = 'form-input'
 class TemplateForm(forms.ModelForm):
     class Meta:
         model = Template
-        fields = ['title', 'body']
+        fields = ['title', 'template_type', 'body']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': INPUT_CLS,
                 'placeholder': 'e.g. Welcome Email',
             }),
+            'template_type': forms.RadioSelect(),
             'body': forms.Textarea(attrs={
-                'rows': 9,
+                'rows': 12,
                 'class': INPUT_CLS,
-                'placeholder': 'Use {{name}}, {{email}} as placeholders…',
+                'id': 'id_body_field',
+                'placeholder': 'Enter template content…',
             }),
         }
 
@@ -45,9 +49,8 @@ class CustomerForm(forms.ModelForm):
 
 
 class QuickEmailSendForm(forms.Form):
-    """Send email to any address; optionally save recipient as Customer."""
+    """Send email with preview before sending."""
 
-    # Recipient
     to_email = forms.EmailField(
         label='To *',
         widget=forms.EmailInput(attrs={'class': INPUT_CLS, 'placeholder': 'recipient@example.com'}),
@@ -61,7 +64,6 @@ class QuickEmailSendForm(forms.Form):
         widget=forms.TextInput(attrs={'class': INPUT_CLS, 'placeholder': 'bcc@example.com'}),
     )
 
-    # Content
     template = forms.ModelChoiceField(
         queryset=Template.objects.none(),
         required=False,
@@ -74,11 +76,15 @@ class QuickEmailSendForm(forms.Form):
     )
     body = forms.CharField(
         label='Body *',
-        widget=forms.Textarea(attrs={'rows': 9, 'class': INPUT_CLS, 'id': 'id_body',
+        widget=forms.Textarea(attrs={'rows': 10, 'class': INPUT_CLS, 'id': 'id_body',
                                      'placeholder': 'Your email body…'}),
     )
+    is_html = forms.BooleanField(
+        label='HTML Email',
+        required=False,
+        widget=forms.CheckboxInput(attrs={'id': 'id_is_html', 'class': 'save-toggle'}),
+    )
 
-    # Save-as-customer section
     save_as_customer = forms.BooleanField(
         label='Save recipient as Customer',
         required=False,
@@ -114,3 +120,93 @@ class QuickEmailSendForm(forms.Form):
     def clean_bcc_emails(self):
         raw = self.cleaned_data.get('bcc_emails', '')
         return [e.strip() for e in raw.split(',') if e.strip()] if raw else []
+    
+
+
+class SignUpForm(UserCreationForm):
+    """User registration form"""
+    email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'class': INPUT_CLS, 'placeholder': 'your@email.com'})
+    )
+    first_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'class': INPUT_CLS, 'placeholder': 'First name'})
+    )
+    last_name = forms.CharField(
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={'class': INPUT_CLS, 'placeholder': 'Last name'})
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'password1', 'password2')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': INPUT_CLS, 'placeholder': 'Username'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.update({'class': INPUT_CLS, 'placeholder': 'Password'})
+        self.fields['password2'].widget.attrs.update({'class': INPUT_CLS, 'placeholder': 'Confirm password'})
+
+
+class ProfileForm(forms.ModelForm):
+    """User profile editing form"""
+    email = forms.EmailField(required=True, widget=forms.EmailInput(attrs={'class': INPUT_CLS}))
+    first_name = forms.CharField(max_length=30, required=False, widget=forms.TextInput(attrs={'class': INPUT_CLS}))
+    last_name = forms.CharField(max_length=30, required=False, widget=forms.TextInput(attrs={'class': INPUT_CLS}))
+    
+    class Meta:
+        model = UserProfile
+        fields = ['avatar']
+        widgets = {
+            'avatar': forms.FileInput(attrs={'class': INPUT_CLS, 'accept': 'image/*'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if self.user:
+            self.fields['email'].initial = self.user.email
+            self.fields['first_name'].initial = self.user.first_name
+            self.fields['last_name'].initial = self.user.last_name
+    
+    def save(self, commit=True):
+        profile = super().save(commit=False)
+        if self.user:
+            self.user.email = self.cleaned_data['email']
+            self.user.first_name = self.cleaned_data['first_name']
+            self.user.last_name = self.cleaned_data['last_name']
+            self.user.save()
+        if commit:
+            profile.save()
+        return profile
+
+
+class EmailSettingsForm(forms.ModelForm):
+    """SMTP settings form with password field"""
+    smtp_password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'class': INPUT_CLS, 'placeholder': 'App Password'}),
+        help_text='Your Gmail App Password (16 characters)',
+        label='SMTP Password'
+    )
+    
+    class Meta:
+        model = UserEmailSettings
+        fields = ['smtp_email', 'smtp_host', 'smtp_port', 'smtp_use_tls']
+        widgets = {
+            'smtp_email': forms.EmailInput(attrs={'class': INPUT_CLS, 'placeholder': 'your-email@gmail.com'}),
+            'smtp_host': forms.TextInput(attrs={'class': INPUT_CLS, 'placeholder': 'smtp.gmail.com'}),
+            'smtp_port': forms.NumberInput(attrs={'class': INPUT_CLS, 'placeholder': '587'}),
+            'smtp_use_tls': forms.CheckboxInput(attrs={'class': 'save-toggle'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Don't require password if editing existing settings
+        if self.instance and self.instance.pk:
+            self.fields['smtp_password'].required = False
+            self.fields['smtp_password'].help_text = 'Leave blank to keep current password'

@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% block title %}Email Settings — Email Buddy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Email Settings</h1>
+  <p>Configure your SMTP settings to send emails</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 400px; gap: 1.5rem; align-items: start;">
+  
+  <!-- Settings Form -->
+  <div class="card">
+    <h3 class="card-title">SMTP Configuration</h3>
+    
+    <form method="post" id="settingsForm">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        <label class="form-label">{{ form.smtp_email.label }} *</label>
+        {{ form.smtp_email }}
+        {% if form.smtp_email.errors %}
+          <p style="color: var(--destructive); font-size: 0.875rem; margin-top: 0.25rem;">{{ form.smtp_email.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">{{ form.smtp_password.label }} *</label>
+        {{ form.smtp_password }}
+        {% if form.smtp_password.errors %}
+          <p style="color: var(--destructive); font-size: 0.875rem; margin-top: 0.25rem;">{{ form.smtp_password.errors.0 }}</p>
+        {% endif %}
+        <p style="font-size: 0.8rem; color: var(--muted-fg); margin-top: 0.5rem;">
+          {{ form.smtp_password.help_text }}
+        </p>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">{{ form.smtp_host.label }} *</label>
+          {{ form.smtp_host }}
+        </div>
+        <div class="form-group">
+          <label class="form-label">{{ form.smtp_port.label }} *</label>
+          {{ form.smtp_port }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          {{ form.smtp_use_tls }}
+          <label for="{{ form.smtp_use_tls.id_for_label }}" style="font-weight: 600; cursor: pointer;">
+            Use TLS (recommended)
+          </label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <button type="button" id="testBtn" class="btn btn-secondary">
+          <span class="material-symbols-outlined" style="font-size: 18px;">network_check</span>
+          Test Connection
+        </button>
+      </div>
+    </form>
+
+    <!-- Test Result -->
+    <div id="testResult" style="display: none; margin-top: 1.5rem; padding: 1rem; border-radius: var(--radius-lg);"></div>
+
+    <!-- Connection Status -->
+    {% if settings and settings.is_verified %}
+      <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(34, 197, 94, 0.1); border-radius: var(--radius-lg); border: 1px solid rgba(34, 197, 94, 0.2);">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="material-symbols-outlined" style="color: #16a34a;">check_circle</span>
+          <div>
+            <p style="font-weight: 600; color: #16a34a;">Connection Verified</p>
+            <p style="font-size: 0.875rem; color: var(--muted-fg);">
+              Last verified: {{ settings.last_verified|date:"F d, Y g:i A" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Gmail Guide -->
+  <div>
+    <div class="card">
+      <h3 class="card-title">📧 How to Get Gmail App Password</h3>
+      
+      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; gap: 0.75rem;">
+          <div style="background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: 0.875rem;">1</div>
+          <div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">Enable 2-Step Verification</p>
+            <p style="font-size: 0.875rem; color: var(--muted-fg);">Go to Google Account → Security → 2-Step Verification</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <div style="background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: 0.875rem;">2</div>
+          <div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">Generate App Password</p>
+            <p style="font-size: 0.875rem; color: var(--muted-fg);">Search for "App passwords" in your Google Account</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <div style="background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: 0.875rem;">3</div>
+          <div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">Create Password</p>
+            <p style="font-size: 0.875rem; color: var(--muted-fg);">Select "Mail" and "Other (Custom name)", name it "Email Buddy"</p>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+          <div style="background: var(--primary); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; font-size: 0.875rem;">4</div>
+          <div>
+            <p style="font-weight: 600; margin-bottom: 0.25rem;">Copy & Paste</p>
+            <p style="font-size: 0.875rem; color: var(--muted-fg);">Copy the 16-character password (remove spaces) and paste above</p>
+          </div>
+        </div>
+      </div>
+
+      <a href="https://myaccount.google.com/apppasswords" target="_blank" class="btn btn-secondary" style="width: 100%; margin-top: 1.25rem; justify-content: center;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">open_in_new</span>
+        Generate App Password
+      </a>
+    </div>
+
+    <div class="tip-box" style="margin-top: 1rem;">
+      <strong>💡 Why App Passwords?</strong><br>
+      App passwords are more secure than your regular password and allow Email Buddy to send emails on your behalf without accessing your full account.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Test SMTP Connection
+  document.getElementById('testBtn').addEventListener('click', async function() {
+    const btn = this;
+    const resultDiv = document.getElementById('testResult');
+    
+    btn.disabled = true;
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">hourglass_empty</span> Testing...';
+    
+    try {
+      const response = await fetch('{% url "test_smtp" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      resultDiv.style.display = 'block';
+      
+      if (data.success) {
+        resultDiv.style.background = 'rgba(34, 197, 94, 0.1)';
+        resultDiv.style.border = '1px solid rgba(34, 197, 94, 0.2)';
+        resultDiv.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="material-symbols-outlined" style="color: #16a34a; font-size: 28px;">check_circle</span>
+            <div>
+              <p style="font-weight: 600; color: #16a34a;">Connection Successful!</p>
+              <p style="font-size: 0.875rem; color: var(--muted-fg)">${data.message}</p>
+            </div>
+          </div>
+        `;
+      } else {
+        resultDiv.style.background = '#fee2e2';
+        resultDiv.style.border = '1px solid #fca5a5';
+        resultDiv.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="material-symbols-outlined" style="color: #ef4444; font-size: 28px;">error</span>
+            <div>
+              <p style="font-weight: 600; color: #991b1b;">Connection Failed</p>
+              <p style="font-size: 0.875rem; color: #7f1d1d">${data.message}</p>
+            </div>
+          </div>
+        `;
+      }
+    } catch (error) {
+      resultDiv.style.display = 'block';
+      resultDiv.style.background = '#fee2e2';
+      resultDiv.style.border = '1px solid #fca5a5';
+      resultDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="material-symbols-outlined" style="color: #ef4444; font-size: 28px;">error</span>
+          <div>
+            <p style="font-weight: 600; color: #991b1b;">Error</p>
+            <p style="font-size: 0.875rem; color: #7f1d1d">Failed to test connection</p>
+          </div>
+        </div>
+      `;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 18px;">network_check</span> Test Connection';
+    }
+  });
+</script>
+
+{% endblock %}

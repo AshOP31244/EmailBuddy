@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import Template, Customer, EmailLog
-
+from .models import UserProfile, UserEmailSettings
 
 @admin.register(Template)
 class TemplateAdmin(admin.ModelAdmin):
@@ -25,3 +25,18 @@ class EmailLogAdmin(admin.ModelAdmin):
     search_fields = ('customer__email', 'customer__name')
     date_hierarchy = 'sent_at'
     readonly_fields = ('sent_at',)
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'dark_mode', 'created_at')
+    list_filter = ('dark_mode',)
+    search_fields = ('user__username', 'user__email')
+
+
+@admin.register(UserEmailSettings)
+class UserEmailSettingsAdmin(admin.ModelAdmin):
+    list_display = ('user', 'smtp_email', 'smtp_host', 'is_verified', 'last_verified')
+    list_filter = ('is_verified', 'smtp_host')
+    search_fields = ('user__username', 'smtp_email')
+    readonly_fields = ('smtp_password_encrypted',)

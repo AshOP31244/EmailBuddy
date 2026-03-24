@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Profile — Email Buddy{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Profile</h1>
+  <p>Manage your account settings</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; max-width: 1200px;">
+  
+  <!-- Profile Card -->
+  <div class="card">
+    <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;">
+      <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; border: 3px solid var(--border); flex-shrink: 0;">
+        {% if user.profile.avatar %}
+          <img src="{{ user.profile.get_avatar_url }}" alt="{{ user.username }}" style="width: 100%; height: 100%; object-fit: cover;">
+        {% else %}
+          <div style="width: 100%; height: 100%; background: var(--primary); display: flex; align-items: center; justify-content: center;">
+            <span class="material-symbols-outlined" style="font-size: 40px; color: white;">account_circle</span>
+          </div>
+        {% endif %}
+      </div>
+      <div>
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">
+          {{ user.get_full_name|default:user.username }}
+        </h2>
+        <p style="color: var(--muted-fg); font-size: 0.9rem;">{{ user.email }}</p>
+        <p style="color: var(--muted-fg); font-size: 0.85rem; margin-top: 0.25rem;">
+          @{{ user.username }}
+        </p>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <a href="{% url 'profile_edit' %}" class="btn btn-primary">
+        <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
+        Edit Profile
+      </a>
+      <a href="{% url 'email_settings' %}" class="btn btn-secondary">
+        <span class="material-symbols-outlined" style="font-size: 18px;">settings</span>
+        Email Settings
+      </a>
+    </div>
+  </div>
+
+  <!-- Account Info Card -->
+  <div class="card">
+    <h3 class="card-title">Account Information</h3>
+    
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      <div>
+        <p style="font-size: 0.8rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Username</p>
+        <p style="font-weight: 600;">{{ user.username }}</p>
+      </div>
+
+      <div>
+        <p style="font-size: 0.8rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Email</p>
+        <p style="font-weight: 600;">{{ user.email }}</p>
+      </div>
+
+      <div>
+        <p style="font-size: 0.8rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Full Name</p>
+        <p style="font-weight: 600;">{{ user.get_full_name|default:"Not set" }}</p>
+      </div>
+
+      <div>
+        <p style="font-size: 0.8rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Member Since</p>
+        <p style="font-weight: 600;">{{ user.date_joined|date:"F d, Y" }}</p>
+      </div>
+
+      <div>
+        <p style="font-size: 0.8rem; color: var(--muted-fg); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Theme Preference</p>
+        <p style="font-weight: 600;">
+          {% if user.profile.dark_mode %}
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">dark_mode</span> Dark Mode
+          {% else %}
+            <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">light_mode</span> Light Mode
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Email Settings Status -->
+<div class="card" style="max-width: 1200px;">
+  <h3 class="card-title">Email Configuration</h3>
+  
+  {% if has_email_settings %}
+    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(217, 119, 87, 0.05); border-radius: var(--radius-lg); border: 1px solid rgba(217, 119, 87, 0.2);">
+      <span class="material-symbols-outlined" style="color: var(--primary); font-size: 32px;">check_circle</span>
+      <div style="flex: 1;">
+        <p style="font-weight: 600; margin-bottom: 0.25rem;">Email settings configured</p>
+        <p style="font-size: 0.875rem; color: var(--muted-fg);">
+          You're all set to send emails from {{ user.email_settings.smtp_email }}
+        </p>
+      </div>
+      <a href="{% url 'email_settings' %}" class="btn btn-secondary">Manage</a>
+    </div>
+  {% else %}
+    <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: #fee2e2; border-radius: var(--radius-lg); border: 1px solid #fca5a5;">
+      <span class="material-symbols-outlined" style="color: #ef4444; font-size: 32px;">warning</span>
+      <div style="flex: 1;">
+        <p style="font-weight: 600; margin-bottom: 0.25rem; color: #991b1b;">Email settings not configured</p>
+        <p style="font-size: 0.875rem; color: #7f1d1d;">
+          Configure your SMTP settings to start sending emails
+        </p>
+      </div>
+      <a href="{% url 'email_settings' %}" class="btn btn-primary">Configure Now</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="max-width: 1200px;">
+  <h3 class="card-title">Quick Actions</h3>
+  
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <a href="{% url 'install_pwa' %}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius-lg); text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);">
+      <span class="material-symbols-outlined" style="color: var(--primary); font-size: 32px;">install_mobile</span>
+      <div>
+        <p style="font-weight: 600; color: var(--foreground); font-size: 0.9rem;">Install as App</p>
+        <p style="font-size: 0.75rem; color: var(--muted-fg);">PWA installation</p>
+      </div>
+    </a>
+
+    <a href="{% url 'dashboard' %}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius-lg); text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);">
+      <span class="material-symbols-outlined" style="color: var(--primary); font-size: 32px;">dashboard</span>
+      <div>
+        <p style="font-weight: 600; color: var(--foreground); font-size: 0.9rem;">Dashboard</p>
+        <p style="font-size: 0.75rem; color: var(--muted-fg);">View overview</p>
+      </div>
+    </a>
+
+    <a href="{% url 'template_list' %}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius-lg); text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);">
+      <span class="material-symbols-outlined" style="color: var(--primary); font-size: 32px;">description</span>
+      <div>
+        <p style="font-weight: 600; color: var(--foreground); font-size: 0.9rem;">Templates</p>
+        <p style="font-size: 0.75rem; color: var(--muted-fg);">Manage templates</p>
+      </div>
+    </a>
+
+    <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--muted); border-radius: var(--radius-lg); text-decoration: none; transition: all 0.2s; border: 1px solid var(--border);">
+      <span class="material-symbols-outlined" style="color: #ef4444; font-size: 32px;">logout</span>
+      <div>
+        <p style="font-weight: 600; color: var(--foreground); font-size: 0.9rem;">Logout</p>
+        <p style="font-size: 0.75rem; color: var(--muted-fg);">Sign out</p>
+      </div>
+    </a>
+  </div>
+</div>
+
+{% endblock %}
